@@ -1,29 +1,39 @@
 const express = require("express");
 const fs = require("fs");
 
-const app = express();
-const port = 3000;
+if (!process.env.PORT) {
+    throw new Error("Please specify the port number for the HTTP server with the environment variable PORT.");
+}
+
+const PORT = process.env.PORT;
 
 //
-// Registers a HTTP GET route for video streaming.
+// Application entry point.
 //
-// Original code for this:
-// https://medium.com/better-programming/video-stream-with-node-js-and-html5-320b3191a6b6
-//
-app.get("/video", async (req, res) => {
-    const videoPath = "../videos/SampleVideo_1280x720_1mb.mp4";
-    const stats = await fs.promises.stat(videoPath);
+async function main() {
 
-    res.writeHead(200, {
-        "Content-Length": stats.size,
-        "Content-Type": "video/mp4",
+    const app = express();
+
+    app.get("/video", async (req, res) => { // Route for streaming video.
+        
+        const videoPath = "./videos/SampleVideo_1280x720_1mb.mp4";
+        const stats = await fs.promises.stat(videoPath);
+    
+        res.writeHead(200, {
+            "Content-Length": stats.size,
+            "Content-Type": "video/mp4",
+        });
+
+        fs.createReadStream(videoPath).pipe(res);
     });
-    fs.createReadStream(videoPath).pipe(res);
-});
 
-//
-// Starts the HTTP server.
-//
-app.listen(port, () => {
-    console.log(`Microservice listening on port ${port}, point your browser at http://localhost:${port}/video`);
-});
+    app.listen(PORT, () => {
+        console.log("Microservice online.");
+    });
+}
+
+main()
+    .catch(err => {
+        console.error("Microservice failed to start.");
+        console.error(err && err.stack || err);
+    });
